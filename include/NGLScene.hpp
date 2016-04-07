@@ -6,6 +6,10 @@
 #include <ngl/Transformation.h>
 #include <ngl/Text.h>
 #include <QOpenGLWindow>
+
+#include "Button.hpp"
+#include <vector>
+#include <QTime>
 //----------------------------------------------------------------------------------------------------------------------
 /// @file NGLScene.h
 /// @brief this class inherits from the Qt OpenGLWindow and allows us to use NGL to draw OpenGL
@@ -40,6 +44,22 @@ class NGLScene : public QOpenGLWindow
     /// @brief this is called everytime we want to draw the scene
     //----------------------------------------------------------------------------------------------------------------------
     void paintGL();
+
+    void addButton(ngl::Vec2 _pos, ngl::Vec2 _size, ngl::Vec4 _color);
+
+    void updateButtonArrays();
+
+    GLuint loadTexture(std::string _textureFile);
+
+    void toggleFullScreen();
+
+    Button *checkButtonMouseOver();
+
+    void loadDwellingButtons();
+    void loadLargeTouchButtons();
+    void loadSmallTouchButtons();
+    void loadScanningButtons();
+
 
 private:
     //----------------------------------------------------------------------------------------------------------------------
@@ -79,6 +99,8 @@ private:
     /// @param _event the Qt Event structure
     //----------------------------------------------------------------------------------------------------------------------
     void wheelEvent( QWheelEvent *_event);
+
+    void timerEvent(QTimerEvent *_event);
     //----------------------------------------------------------------------------------------------------------------------
     /// @brief window width
     //----------------------------------------------------------------------------------------------------------------------
@@ -88,6 +110,32 @@ private:
     //----------------------------------------------------------------------------------------------------------------------
     int m_height;
 
+    bool m_fullScreen;
+
+    GLuint m_vaoID;
+
+    GLuint m_vboIDs[3];
+
+    std::vector<Button> m_buttons;
+
+    std::vector<float> m_buttonPosAndSizes;
+
+    std::vector<float> m_buttonColors;
+
+    std::vector<float> m_buttonSelectedTimes;
+
+    ngl::Vec2 m_mousePos;
+
+    enum uiMode{DWELLING, TOUCHSCREEN, SCANNING};
+
+    uiMode m_mode;
+
+    Button *m_currentButton;
+
+    QTime m_time;
+
+    int m_lastRenderElapsed;
+    float m_frameRenderTime;
 };
 
 

@@ -3,8 +3,8 @@ basic OpenGL demo modified from http://qt-project.org/doc/qt-5.0/qtgui/openglwin
 ****************************************************************************/
 #include <QtGui/QGuiApplication>
 #include <iostream>
-#include "NGLScene.h"
-
+#include "NGLScene.hpp"
+#include "Data.hpp"
 
 
 int main(int argc, char **argv)
@@ -36,7 +36,7 @@ int main(int argc, char **argv)
   // we can now query the version to see if it worked
   std::cout<<"Profile is "<<format.majorVersion()<<" "<<format.minorVersion()<<"\n";
   // set the window size
-  window.resize(1024, 720);
+  window.resize(Data::instance()->width, Data::instance()->height);
   // and finally show
   window.show();
 

@@ -1,5 +1,5 @@
 # This specifies the exe name
-TARGET=BlankNGL
+TARGET=Specialist
 # where to put the .o files
 OBJECTS_DIR=obj
 # core Qt Libs to use add more here if needed.
@@ -16,16 +16,21 @@ MOC_DIR=moc
 # on a mac we don't create a .app bundle file ( for ease of multiplatform use)
 CONFIG-=app_bundle
 # Auto include all .cpp files in the project src directory (can specifiy individually if required)
-SOURCES+= $$PWD/src/main.cpp \
-					$$PWD/src/NGLScene.cpp
+SOURCES+= ./src/main.cpp \
+          ./src/NGLScene.cpp \
+          ./src/Button.cpp \
+          ./src/Data.cpp
 # same for the .h files
-HEADERS+= $$PWD/include/NGLScene.h
+HEADERS+= ./include/NGLScene.hpp \
+          ./include/Button.hpp \
+          ./include/Data.hpp
 # and add the include dir into the search path for Qt and make
 INCLUDEPATH +=./include
 # where our exe is going to live (root of project)
 DESTDIR=./
 # add the glsl shader files
-OTHER_FILES+= README.md
+OTHER_FILES+= README.md \
+              ./shaders/*.glsl
 # were are going to default to a console app
 CONFIG += console
 # note each command you add needs a ; as it will be run as a single line
