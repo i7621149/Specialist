@@ -13,8 +13,6 @@ NGLScene::NGLScene()
   // re-size the widget to that of the parent (in this case the GLFrame passed in on construction)
   setTitle("UI");
 
-  m_mode = DWELLING;
-
   m_mousePos.set(-1, -1);
 
   m_time = QTime::currentTime();
@@ -46,12 +44,11 @@ void NGLScene::initializeGL()
   // be done once we have a valid GL context but before we call any GL commands. If we dont do
   // this everything will crash
   ngl::NGLInit::instance();
-  glClearColor(0.0, 0.0, 0.0, 1.0);			   // Grey Background
+  glClearColor(0.8, 0.9, 0.9, 1.0);			   // Grey Background
   // enable depth testing for drawing
   glEnable(GL_DEPTH_TEST);
   // enable multisampling for smoother drawing
   glEnable(GL_MULTISAMPLE);
-
 
   ngl::ShaderLib *shader=ngl::ShaderLib::instance();
   // we are creating a shader called Phong
@@ -62,9 +59,9 @@ void NGLScene::initializeGL()
   shader->attachShader("buttonGeometry", ngl::ShaderType::GEOMETRY);
 
   // attach the source
-  shader->loadShaderSource("buttonVertex","shaders/VertexShader.glsl");
-  shader->loadShaderSource("buttonFragment","shaders/FragmentShader.glsl");
-  shader->loadShaderSource("buttonGeometry", "shaders/GeometryShader.glsl");
+  shader->loadShaderSource("buttonVertex","shaders/ButtonVertexShader.glsl");
+  shader->loadShaderSource("buttonFragment","shaders/ButtonFragmentShader.glsl");
+  shader->loadShaderSource("buttonGeometry", "shaders/ButtonGeometryShader.glsl");
 
   // compile the shaders
   shader->compileShader("buttonVertex");
@@ -85,39 +82,53 @@ void NGLScene::initializeGL()
   // and make it active ready to load values
   shader->use("buttonShader");
 
-
   glGenVertexArrays(1, &m_vaoID);
 
   glGenBuffers(3, m_vboIDs);
 
-  loadDwellingButtons();
 
   //addButton(ngl::Vec4(-1.0, -1.0, 2.0, 2.0), ngl::Vec4(1.0, 0.0, 0.0, 1.0), "buttons/test1.png", true);
 
   //toggleFullScreen();
 
-  shader->setRegisteredUniform("circleSize", Data::instance()->circleSize);
-  shader->setRegisteredUniform("dwellTime", Data::instance()->dwellTime);
+  Data *data = Data::instance();
+
+  switch(data->mode){
+    case Data::DWELLING :
+      loadDwellingButtons();
+    break;
+    case Data::SCANNING :
+      loadScanningButtons();
+    break;
+  }
+
+  shader->setRegisteredUniform("circleSize", data->circleSize);
+  shader->setRegisteredUniform("dwellTime", data->dwellTime);
+  shader->setRegisteredUniform("clickMovement", data->clickMovement);
+  shader->setRegisteredUniform("borderSize", data->borderSize);
+  shader->setRegisteredUniform("borderColor", data->borderColor);
+  shader->setRegisteredUniform("mode", data->mode);
 
   startTimer(16);
 }
 
 void NGLScene::loadDwellingButtons()
 {
+  Data *data = Data::instance();
   m_buttons.clear();
 
   ngl::Vec2 buttonPos;
   ngl::Vec2 buttonSize;
   ngl::Vec4 buttonColor;
 
-  buttonColor.set(0.0, 0.0, 1.0, 1.0);
+  buttonColor.set(data->baseColor);
   buttonPos.set(-0.2, -0.2);
   buttonSize.set(0.6, 0.6);
 
-
   addButton(buttonPos, buttonSize, buttonColor);
 
-
+  buttonPos.set(-0.9, -0.9);
+  addButton(buttonPos, buttonSize, buttonColor);
 
   updateButtonArrays();
 }
@@ -138,7 +149,21 @@ void NGLScene::loadSmallTouchButtons()
 
 void NGLScene::loadScanningButtons()
 {
+  Data *data = Data::instance();
   m_buttons.clear();
+
+  ngl::Vec2 buttonPos;
+  ngl::Vec2 buttonSize;
+  ngl::Vec4 buttonColor;
+
+  buttonColor.set(data->baseColor);
+  buttonPos.set(-0.2, -0.2);
+  buttonSize.set(0.6, 0.6);
+
+  addButton(buttonPos, buttonSize, buttonColor);
+
+  buttonPos.set(-0.9, -0.9);
+  addButton(buttonPos, buttonSize, buttonColor);
 
   updateButtonArrays();
 }
@@ -241,15 +266,19 @@ void NGLScene::updateButtonArrays()
 
   m_buttonPosAndSizes.clear();
   m_buttonColors.clear();
-  m_buttonSelectedTimes.clear();
+  m_buttonSelectedAndClicked.clear();
 
-  for(auto &button : m_buttons){
+  for(Button &button : m_buttons){
     for(int i=0; i<4; i++){
       if(i<2) m_buttonPosAndSizes.push_back(button.m_pos[i]);
       else m_buttonPosAndSizes.push_back(button.m_size[i-2]);
       m_buttonColors.push_back(button.m_color[i]);
     }
-    m_buttonSelectedTimes.push_back(button.m_selectedTime);
+    m_buttonSelectedAndClicked.push_back(button.m_selectedTime);
+    m_buttonSelectedAndClicked.push_back(button.m_clicked);
+  }
+
+  for(int i=0; i<m_buttonSelectedAndClicked.size(); i++){
   }
 
   glBindVertexArray(m_vaoID);
@@ -269,9 +298,9 @@ void NGLScene::updateButtonArrays()
   glEnableVertexAttribArray(1);
 
   glBindBuffer(GL_ARRAY_BUFFER, m_vboIDs[2]);
-  glBufferData(GL_ARRAY_BUFFER, m_buttonSelectedTimes.size() * sizeof(float), &(m_buttonSelectedTimes[0]), GL_STATIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, m_buttonSelectedAndClicked.size() * sizeof(float), &(m_buttonSelectedAndClicked[0]), GL_STATIC_DRAW);
   // now fix this to the attribute buffer 0
-  glVertexAttribPointer(2, 1, GL_FLOAT, GL_TRUE, 0, 0);
+  glVertexAttribPointer(2, 2, GL_FLOAT, GL_TRUE, 0, 0);
   // enable and bind this attribute (will be inPosition in the shader)
   glEnableVertexAttribArray(2);
 
@@ -315,36 +344,59 @@ void NGLScene::keyPressEvent(QKeyEvent *_event)
   case Qt::Key_Escape : QGuiApplication::exit(EXIT_SUCCESS); break;
   case Qt::Key_F : toggleFullScreen(); break;
 
+  case Qt::Key_Space : buttonHit();
+
   default : break;
   }
 }
 
 void NGLScene::timerEvent(QTimerEvent *_event)
 {
+  ngl::ShaderLib *shader=ngl::ShaderLib::instance();
   QPoint p = mapFromGlobal(QCursor::pos());
   m_mousePos[0] = (p.x() / float(m_width)  * 2) - 1;
   m_mousePos[1] = (p.y() / float(m_height) * 2) - 1;
   m_mousePos[1] *= -1;
 
+  float currentTime = QTime::currentTime().msecsSinceStartOfDay() / 1000.0;
 
-  switch(m_mode){
-    case DWELLING :
+  switch(Data::instance()->mode){
+    case Data::DWELLING :
       m_currentButton = checkButtonMouseOver();
       for(Button &button : m_buttons){
         if(m_currentButton && &button == m_currentButton){
-          button.m_color.set(0.0, 1.0, 0.0, 1.0);
-          button.m_selectedTime+=m_frameRenderTime/Data::instance()->dwellTime;
+          if(button.m_selectedTime == 0){
+            button.m_firstSelected = currentTime;
+            button.m_selectedTime = 0.001;
+            button.m_color.set(Data::instance()->selectedColor);
+          }
+          else{
+            button.m_selectedTime = currentTime - button.m_firstSelected;
+            if(button.m_selectedTime > Data::instance()->dwellTime){
+              button.click(currentTime);
+            }
+          }
         }
         else{
-          button.m_color.set(0.0, 0.0, 1.0, 1.0);
+          button.m_color.set(Data::instance()->baseColor);
+          button.m_isSelected = 0;
+          button.m_firstSelected = 0;
           button.m_selectedTime = 0;
         }
       }
-      break;
+    break;
+    case Data::SCANNING :
+      std::cout << "scanning" << std::endl;
+    break;
+
+    default :
+      std::cerr << "mode not set" << std::endl;
+    break;
+
 
   }
 
-
+  shader->setRegisteredUniform("currentTime", currentTime);
   update();
 }
 
@@ -357,6 +409,11 @@ Button *NGLScene::checkButtonMouseOver()
     }
   }
   return buttonPtr;
+}
+
+void NGLScene::buttonHit()
+{
+  std::cout << "hit" << std::endl;
 }
 
 void NGLScene::toggleFullScreen()

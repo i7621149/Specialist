@@ -1,11 +1,15 @@
 #include "Data.hpp"
 
 Data::Data() :
-  baseColor(0.0,0.0,1.0,1.0),
-  selectedColor(0.0,1.0,0.0,1.0),
+  mode(DWELLING),
+  baseColor(0.9, 0.5, 0.5, 1.0),
+  selectedColor(1.0, 0.8, 0.8, 1.0),
   width(1024),
   height(720),
   dwellTime(3.0),
-  circleSize(40.0)
+  circleSize(80.0),
+  clickMovement(true),
+  borderSize(3),
+  borderColor(0.3, 0.3, 0.3, 1.0)
 {
 }

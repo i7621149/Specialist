@@ -14,7 +14,10 @@ Button::Button(ngl::Vec2 _pos, ngl::Vec2 _size, ngl::Vec4 _color, GLuint _textur
   m_size(_size),
   m_color(_color),
   m_textureID(_textureID),
-  m_selectedTime(0)
+  m_isSelected(false),
+  m_firstSelected(0),
+  m_selectedTime(0),
+  m_clicked(0)
 {
 
 }
@@ -27,9 +30,17 @@ Button::~Button()
 bool Button::isInside(ngl::Vec2 _pos)
 {
   if(_pos[0] >= m_pos[0] && _pos[1] >= m_pos[1] && _pos[0] < m_pos[0] + m_size[0] && _pos[1] < m_pos[1] + m_size[1]){
-    return true;
+    m_isSelected = true;
   }
   else{
-    return false;
+    m_isSelected = false;
   }
+  return m_isSelected;
+}
+
+void Button::click(float _time)
+{
+  m_firstSelected = 0;
+  m_selectedTime = 0;
+  m_clicked = _time;
 }

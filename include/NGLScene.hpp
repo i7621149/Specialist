@@ -60,6 +60,7 @@ class NGLScene : public QOpenGLWindow
     void loadSmallTouchButtons();
     void loadScanningButtons();
 
+    void buttonHit();
 
 private:
     //----------------------------------------------------------------------------------------------------------------------
@@ -122,13 +123,9 @@ private:
 
     std::vector<float> m_buttonColors;
 
-    std::vector<float> m_buttonSelectedTimes;
+    std::vector<float> m_buttonSelectedAndClicked;
 
     ngl::Vec2 m_mousePos;
-
-    enum uiMode{DWELLING, TOUCHSCREEN, SCANNING};
-
-    uiMode m_mode;
 
     Button *m_currentButton;
 
