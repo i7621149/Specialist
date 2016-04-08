@@ -1,5 +1,6 @@
 #include "Button.hpp"
 #include <iostream>
+#include "Data.hpp"
 
 Button::Button() :
   m_pos(0.2,0.2),
@@ -40,7 +41,9 @@ bool Button::isInside(ngl::Vec2 _pos)
 
 void Button::click(float _time)
 {
-  m_firstSelected = 0;
-  m_selectedTime = 0;
+  if(Data::instance()->mode == Data::DWELLING){
+    m_firstSelected = 0;
+    m_selectedTime = 0;
+  }
   m_clicked = _time;
 }

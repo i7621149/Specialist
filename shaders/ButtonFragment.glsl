@@ -19,6 +19,7 @@ in float fragCurrentTime;
 uniform sampler2D tex;
 
 uniform vec2 resolution;
+uniform vec4 clickedColor;
 uniform float circleSize;
 uniform float dwellTime;
 uniform int borderSize;
@@ -48,11 +49,11 @@ void main()
   outColor = fragColor;
 
   if(mode == DWELLING){
-    if(dist > circleSize ){
+    if(dist > circleSize){
       outColor = fragColor;
     }
     else if(dist < circleSize - borderSize){
-      if(timeSinceClick > 0.5){
+      if(timeSinceClick > dwellTime/4.0){
         float angle = 1.0-(fragSelectedTime / dwellTime);
 
         float fragAngle = atan(line.y/line.x);
@@ -79,7 +80,7 @@ void main()
         //outColor = vec4(0.2, 0.4, 0.8, 1.0);
       }
       else{
-        outColor = vec4(0.3, 1.0, 0.6, 1.0);
+        outColor = clickedColor;
 
       }
     }
@@ -88,8 +89,11 @@ void main()
     }
   }
   else if(mode == SCANNING){
-    if(timeSinceClick < 0.5){
-      outColor = vec4(0.3, 1.0, 0.6, 1.0);
+    if(fragSelectedTime > 0){
+      outColor = fragColor;
+    }
+    if(timeSinceClick < dwellTime/4.0){
+      outColor = clickedColor;
     }
   }
 

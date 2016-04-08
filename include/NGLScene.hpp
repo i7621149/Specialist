@@ -113,7 +113,7 @@ private:
 
     bool m_fullScreen;
 
-    GLuint m_vaoID;
+    GLuint m_vaoIDs[2];
 
     GLuint m_vboIDs[3];
 

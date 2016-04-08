@@ -13,6 +13,7 @@ public:
   uiMode mode;
   ngl::Vec4 baseColor;
   ngl::Vec4 selectedColor;
+  ngl::Vec4 clickedColor;
   int width;
   int height;
   float dwellTime;
