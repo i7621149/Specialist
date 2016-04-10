@@ -105,10 +105,10 @@ void NGLScene::initializeGL()
 
   m_view = ngl::lookAt(ngl::Vec3(5,1,0), ngl::Vec3(0,1,0), ngl::Vec3(0,1,0));
 
-  m_geo.push_back(new Geo("geo/base.obj"));
-  m_geo.push_back(new Geo("geo/lower.obj"));
-  m_geo.push_back(new Geo("geo/upper.obj"));
-  m_geo.push_back(new Geo("geo/hand.obj"));
+  m_geo.push_back(new Geo("geo/base.obj", 0.05));
+  m_geo.push_back(new Geo("geo/lower.obj", 0.8));
+  m_geo.push_back(new Geo("geo/upper.obj", 0.8));
+  m_geo.push_back(new Geo("geo/hand.obj", 0.2));
 
   for(auto &geo : m_geo){
     geo->m_mesh.createVAO();
@@ -146,30 +146,13 @@ void NGLScene::initializeGL()
   shader->setRegisteredUniform("loadingBarSize", data->loadingBarSize);
   shader->setRegisteredUniform("borderColor", data->borderColor);
   shader->setRegisteredUniform("loadingBarColor", data->loadingBarColor);
-  shader->setRegisteredUniform("mode", data->mode);
+  shader->setRegisteredUniform("mode", data->shaderMode);
 
   startTimer(16);
 }
 
 void NGLScene::loadDwellingButtons()
 {
-  Data *data = Data::instance();
-  m_buttons.clear();
-
-  ngl::Vec2 buttonPos;
-  ngl::Vec2 buttonSize;
-  ngl::Vec4 buttonColor;
-
-  buttonPos.set(-0.2, -0.2);
-  buttonSize.set(0.4, 0.4);
-  buttonColor.set(data->baseColor);
-
-  addButton(buttonPos, buttonSize, buttonColor, Button::Action::SPIN_CCW);
-
-  updateButtonArrays();
-
-
-/*
   Data *data = Data::instance();
   m_buttons.clear();
 
@@ -226,8 +209,6 @@ void NGLScene::loadDwellingButtons()
   addButton(buttonPos, buttonSize, buttonColor, Button::Action::ROTATE_3_R);
 
   updateButtonArrays();
-
-*/
 }
 
 void NGLScene::loadLargeTouchButtons()
@@ -262,16 +243,16 @@ void NGLScene::paintGL()
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glViewport(0,0,m_width,m_height);
 
-  //shader->use("geoShader");
+  shader->use("geoShader");
 
+  m_transform.reset();
+  ngl::Vec3 translation(0,0,0);
   for(unsigned int i = 0; i<m_geo.size(); i++){
-    m_transform.reset();
-    //for(unsigned int j=0; j<=i; j++){
-      //m_transform.addRotation(m_geo[j]->m_rotation);
-    //}
-    m_transform.addRotation(m_geo[i]->m_rotation);
+    m_transform.setRotation(m_geo[i]->m_rotation);
     loadMatricesToShader();
     m_geo[i]->m_mesh.draw();
+    m_transform.addPosition(m_geo[i]->getTopPosition());
+    //m_transform.setPosition(position);
   }
 
   shader->use("buttonShader");
@@ -446,7 +427,7 @@ void NGLScene::keyPressEvent(QKeyEvent *_event)
   case Qt::Key_Escape : QGuiApplication::exit(EXIT_SUCCESS); break;
   case Qt::Key_F : toggleFullScreen(); break;
 
-  case Qt::Key_Space : if(!_event->isAutoRepeat()) buttonHit();
+  case Qt::Key_Space : if(!_event->isAutoRepeat() && Data::instance()->mode == Data::SCANNING) buttonHit();
 
   default : break;
   }
@@ -521,45 +502,52 @@ void NGLScene::timerEvent(QTimerEvent *_event)
     break;
 
   }
+  int start = 0;
+  int dir = 0;
+  int rotIndex = 0;
   if(m_action) std::cout << m_action << std::endl;
   switch(m_action){
     case Button::Action::NONE :
     break;
     case Button::Action::SPIN_CW :
-      m_geo[0]->m_rotation.m_y += data->rotateAngle;
+      start = 0;
+      dir += 0;
+      rotIndex = 1;
     break;
     case Button::Action::SPIN_CCW :
-      m_geo[0]->m_rotation.m_y -= data->rotateAngle;
+      start = 0;
+      dir -= 1;
+      rotIndex = 1;
     break;
     case Button::Action::ROTATE_1_R :
-      if(m_geo[1]->m_rotation.m_x > -90){
-        m_geo[1]->m_rotation.m_x -= data->rotateAngle;
-      }
+        start = 1;
+        dir -= 1;
+        rotIndex = 0;
     break;
     case Button::Action::ROTATE_1_L :
-      if(m_geo[1]->m_rotation.m_x < 90){
-        m_geo[1]->m_rotation.m_x += data->rotateAngle;
-      }
+        start = 1;
+        dir += 1;
+        rotIndex = 0;
     break;
     case Button::Action::ROTATE_2_R :
-      if(m_geo[2]->m_rotation.m_x > -90){
-        m_geo[2]->m_rotation.m_x -= data->rotateAngle;
-      }
+        start = 2;
+        dir -= 1;
+        rotIndex = 0;
     break;
     case Button::Action::ROTATE_2_L :
-      if(m_geo[2]->m_rotation.m_x < 90){
-        m_geo[2]->m_rotation.m_x += data->rotateAngle;
-      }
+        start = 2;
+        dir += 1;
+        rotIndex = 0;
     break;
     case Button::Action::ROTATE_3_R :
-      if(m_geo[3]->m_rotation.m_x > -90){
-        m_geo[3]->m_rotation.m_x -= data->rotateAngle;
-      }
+        start = 3;
+        dir -= 1;
+        rotIndex = 0;
     break;
     case Button::Action::ROTATE_3_L :
-      if(m_geo[3]->m_rotation.m_x < 90){
-        m_geo[3]->m_rotation.m_x += data->rotateAngle;
-      }
+        start = 3;
+        dir += 1;
+        rotIndex = 0;
     break;
     case Button::Action::KEY :
     break;
@@ -569,6 +557,12 @@ void NGLScene::timerEvent(QTimerEvent *_event)
     std::cout << "ERROR: button action" << std::endl;
     break;
 
+  }
+
+  for(unsigned int i = start; i<m_geo.size(); i++){
+    if(m_geo[i]->m_rotation[0] < 90 && m_geo[i]->m_rotation[rotIndex] > -90){
+      m_geo[i]->m_rotation[rotIndex] += data->rotateAngle * dir;
+    }
   }
 
   m_action = Button::Action::NONE;

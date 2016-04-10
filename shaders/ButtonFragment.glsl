@@ -2,10 +2,9 @@
 
 #define PI 3.14159265359
 
-#define DWELLING 0
-#define SCANNING 1
-#define TOUCHLARGE 2
-#define TOUCHSMALL 3
+#define CIRCLE 0
+#define BAR 1
+#define NONE 2
 
 out vec4 outColor;
 
@@ -51,7 +50,7 @@ void main()
 
   outColor = fragColor;
 
-  if(mode == DWELLING){
+  if(mode == CIRCLE){
     if(dist > circleSize){
       outColor = fragColor;
     }
@@ -77,10 +76,17 @@ void main()
           outColor = fragColor;
         }
         else{
-          outColor = vec4(0.2, 0.6, 1.0, 1.0);
+          //outColor = vec4(0.2, 0.6, 1.0, 1.0);
+          outColor = loadingBarColor;
+
+
+
+          //outColor = fragColor;
+
+
+
+
         }
-        //outColor = vec4(0.0, 0.0, fragAngle/(2 * PI), 1.0);
-        //outColor = vec4(0.2, 0.4, 0.8, 1.0);
       }
       else{
         outColor = clickedColor;
@@ -89,10 +95,22 @@ void main()
     }
     else{
       outColor = borderColor;
+
+
+
+
+
+
+      //outColor = fragColor;
+
+
+
+
+
     }
   }
-  else if(mode == SCANNING || mode == TOUCHLARGE || mode == TOUCHSMALL){
-    if(mode == SCANNING){
+  else{
+    if(mode == BAR){
       if(gl_FragCoord.y < posCoord.y + borderSize + loadingBarSize){
         if(buttonUV.x < fragSelectedTime / dwellTime){
           outColor = loadingBarColor;

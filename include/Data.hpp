@@ -10,7 +10,9 @@ friend class ngl::Singleton<Data>;
 
 public:
   enum UiMode{DWELLING, SCANNING, TOUCHLARGE, TOUCHSMALL};
+  enum UiShaderMode{CIRCLE, BAR, NONE};
   UiMode mode;
+  UiShaderMode shaderMode;
   ngl::Vec4 baseColor;
   ngl::Vec4 selectedColor;
   ngl::Vec4 clickedColor;
