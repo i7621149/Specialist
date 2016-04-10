@@ -19,18 +19,21 @@ CONFIG-=app_bundle
 SOURCES+= ./src/main.cpp \
           ./src/NGLScene.cpp \
           ./src/Button.cpp \
-          ./src/Data.cpp
+          ./src/Data.cpp \
+          ./src/Geo.cpp
 # same for the .h files
 HEADERS+= ./include/NGLScene.hpp \
           ./include/Button.hpp \
-          ./include/Data.hpp
+          ./include/Data.hpp \
+          ./include/Geo.hpp
 # and add the include dir into the search path for Qt and make
 INCLUDEPATH +=./include
 # where our exe is going to live (root of project)
 DESTDIR=./
 # add the glsl shader files
 OTHER_FILES+= README.md \
-              ./shaders/*.glsl
+              ./shaders/*.glsl \
+              ./geo/objExport.py
 # were are going to default to a console app
 CONFIG += console
 # note each command you add needs a ; as it will be run as a single line

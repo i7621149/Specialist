@@ -10,7 +10,8 @@ Button::Button() :
 
 }
 
-Button::Button(ngl::Vec2 _pos, ngl::Vec2 _size, ngl::Vec4 _color, GLuint _textureID) :
+Button::Button(ngl::Vec2 _pos, ngl::Vec2 _size, ngl::Vec4 _color, Action _action, GLuint _textureID) :
+  m_action(_action),
   m_pos(_pos),
   m_size(_size),
   m_color(_color),
@@ -39,11 +40,12 @@ bool Button::isInside(ngl::Vec2 _pos)
   return m_isSelected;
 }
 
-void Button::click(float _time)
+Button::Action Button::click(float _time)
 {
   if(Data::instance()->mode == Data::DWELLING){
     m_firstSelected = 0;
     m_selectedTime = 0;
   }
   m_clicked = _time;
+  return m_action;
 }

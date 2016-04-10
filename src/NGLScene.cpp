@@ -10,12 +10,14 @@
 
 NGLScene::NGLScene()
 {
-  // re-size the widget to that of the parent (in this case the GLFrame passed in on construction)
+  m_width = Data::instance()->width;
+  m_height = Data::instance()->height;
   setTitle("UI");
 
   m_mousePos.set(-1, -1);
 
   m_time = QTime::currentTime();
+  m_action = Button::Action::NONE;
 }
 
 
@@ -29,6 +31,8 @@ void NGLScene::resizeGL(QResizeEvent *_event)
   m_width=_event->size().width()*devicePixelRatio();
   m_height=_event->size().height()*devicePixelRatio();
   ngl::ShaderLib::instance()->setRegisteredUniform("resolution", ngl::Vec2(m_width, m_height));
+  m_project = ngl::perspective(45.0f, float(m_width)/float(m_height), 0.2f, 20.0f);
+
 }
 
 void NGLScene::resizeGL(int _w , int _h)
@@ -36,11 +40,11 @@ void NGLScene::resizeGL(int _w , int _h)
   m_width=_w*devicePixelRatio();
   m_height=_h*devicePixelRatio();
   ngl::ShaderLib::instance()->setRegisteredUniform("resolution", ngl::Vec2(m_width, m_height));
+  m_project = ngl::perspective(45.0f, float(m_width)/float(m_height), 0.2f, 20.0f);
 }
 
 void NGLScene::initializeGL()
 {
-
   // we need to initialise the NGL lib which will load all of the OpenGL functions, this must
   // be done once we have a valid GL context but before we call any GL commands. If we dont do
   // this everything will crash
@@ -53,8 +57,6 @@ void NGLScene::initializeGL()
   std::cout << "generating" << std::endl;
 
   ngl::ShaderLib *shader=ngl::ShaderLib::instance();
-
-
 
   shader->createShaderProgram("geoShader");
   // now we are going to create empty shaders for Frag and Vert
@@ -74,8 +76,6 @@ void NGLScene::initializeGL()
   // and make it active ready to load values
   shader->use("geoShader");
 
-
-
   // we are creating a shader called Phong
   shader->createShaderProgram("buttonShader");
   // now we are going to create empty shaders for Frag and Vert
@@ -92,35 +92,31 @@ void NGLScene::initializeGL()
   shader->compileShader("buttonVertex");
   shader->compileShader("buttonFragment");
   shader->compileShader("buttonGeometry");
-  // add them to the program
 
+  // add them to the program
   shader->attachShaderToProgram("buttonShader","buttonVertex");
   shader->attachShaderToProgram("buttonShader","buttonFragment");
   shader->attachShaderToProgram("buttonShader","buttonGeometry");
-
-  // layout attribute 0 is the vertex data (x,y,z)
-  //shader->bindAttribute("buttonShader",0,"inPosAndSize");
-  // attribute 1 is the UV data u,v (if present)
-  //shader->bindAttribute("buttonShader",1,"inColor");
 
   // now we have associated that data we can link the shader
   shader->linkProgramObject("buttonShader");
   // and make it active ready to load values
   shader->use("buttonShader");
 
+  m_view = ngl::lookAt(ngl::Vec3(5,1,0), ngl::Vec3(0,1,0), ngl::Vec3(0,1,0));
 
+  m_geo.push_back(new Geo("geo/base.obj"));
+  m_geo.push_back(new Geo("geo/lower.obj"));
+  m_geo.push_back(new Geo("geo/upper.obj"));
+  m_geo.push_back(new Geo("geo/hand.obj"));
 
-  ngl::VAOPrimitives::instance()->createCylinder("cylinder1", 1.0, 1.0, 8, 1);
-  ngl::VAOPrimitives::instance()->createSphere("sphere1", 1.0, 100);
+  for(auto &geo : m_geo){
+    geo->m_mesh.createVAO();
+  }
 
   glGenVertexArrays(2, m_vaoIDs);
 
   glGenBuffers(3, m_vboIDs);
-
-
-  //addButton(ngl::Vec4(-1.0, -1.0, 2.0, 2.0), ngl::Vec4(1.0, 0.0, 0.0, 1.0), "buttons/test1.png", true);
-
-  //toggleFullScreen();
 
   Data *data = Data::instance();
 
@@ -131,8 +127,14 @@ void NGLScene::initializeGL()
     case Data::SCANNING :
       loadScanningButtons();
     break;
-    case Data::TOUCHSCREEN :
-      std::cout << "touch!" << std::endl;
+    case Data::TOUCHLARGE :
+      loadLargeTouchButtons();
+    break;
+    case Data::TOUCHSMALL :
+      loadSmallTouchButtons();
+    break;
+    default :
+      std::cerr << "DATA MODE ERROR!" << std::endl;
     break;
   }
 
@@ -141,7 +143,9 @@ void NGLScene::initializeGL()
   shader->setRegisteredUniform("dwellTime", data->dwellTime);
   shader->setRegisteredUniform("clickMovement", data->clickMovement);
   shader->setRegisteredUniform("borderSize", data->borderSize);
+  shader->setRegisteredUniform("loadingBarSize", data->loadingBarSize);
   shader->setRegisteredUniform("borderColor", data->borderColor);
+  shader->setRegisteredUniform("loadingBarColor", data->loadingBarColor);
   shader->setRegisteredUniform("mode", data->mode);
 
   startTimer(16);
@@ -156,34 +160,16 @@ void NGLScene::loadDwellingButtons()
   ngl::Vec2 buttonSize;
   ngl::Vec4 buttonColor;
 
-  buttonColor.set(data->baseColor);
   buttonPos.set(-0.2, -0.2);
-  buttonSize.set(0.6, 0.6);
+  buttonSize.set(0.4, 0.4);
+  buttonColor.set(data->baseColor);
 
-  addButton(buttonPos, buttonSize, buttonColor);
-
-  buttonPos.set(-0.9, -0.9);
-  addButton(buttonPos, buttonSize, buttonColor);
+  addButton(buttonPos, buttonSize, buttonColor, Button::Action::SPIN_CCW);
 
   updateButtonArrays();
-}
 
-void NGLScene::loadLargeTouchButtons()
-{
-  m_buttons.clear();
 
-  updateButtonArrays();
-}
-
-void NGLScene::loadSmallTouchButtons()
-{
-  m_buttons.clear();
-
-  updateButtonArrays();
-}
-
-void NGLScene::loadScanningButtons()
-{
+/*
   Data *data = Data::instance();
   m_buttons.clear();
 
@@ -192,19 +178,74 @@ void NGLScene::loadScanningButtons()
   ngl::Vec4 buttonColor;
 
   buttonColor.set(data->baseColor);
-  buttonPos.set(0.0, -0.2);
-  buttonSize.set(0.6, 0.6);
 
-  addButton(buttonPos, buttonSize, buttonColor);
+  float borderX = 50.0;
+  float borderY = 50.0;
 
-  buttonPos.set(-0.9, -0.9);
-  addButton(buttonPos, buttonSize, buttonColor);
+  borderX = borderX/m_width;
+  borderY = borderY/m_height;
 
-  buttonSize.set(0.6, 0.4);
-  buttonPos.set(-0.8, 0.2);
-  addButton(buttonPos, buttonSize, buttonColor);
+  float firstX = borderX * 2 - 1.0;
+  float firstY = borderY * 2 - 1.0;
+
+  buttonPos.set(firstX, firstY);
+  buttonSize.set(0.7, 0.35);
+
+  addButton(buttonPos, buttonSize, buttonColor, Button::Action::SPIN_CCW);
+
+  buttonPos.m_x *= -1;
+  buttonPos.m_x -= buttonSize.m_x;
+  addButton(buttonPos, buttonSize, buttonColor, Button::Action::SPIN_CW);
+
+  buttonSize.set(0.5, 0.35);
+
+  buttonPos.m_x = firstX;
+  buttonPos.m_y += borderY + buttonSize.m_y;
+  addButton(buttonPos, buttonSize, buttonColor, Button::Action::ROTATE_1_L);
+
+  buttonPos.m_x *= -1;
+  buttonPos.m_x -= buttonSize.m_x;
+  addButton(buttonPos, buttonSize, buttonColor, Button::Action::ROTATE_1_R);
+
+  buttonPos.m_x *= -1;
+  buttonPos.m_x -= buttonSize.m_x;
+  buttonPos.m_y += borderY + buttonSize.m_y;
+  addButton(buttonPos, buttonSize, buttonColor, Button::Action::ROTATE_2_L);
+
+  buttonPos.m_x *= -1;
+  buttonPos.m_x -= buttonSize.m_x;
+  addButton(buttonPos, buttonSize, buttonColor, Button::Action::ROTATE_2_R);
+
+  buttonPos.m_x *= -1;
+  buttonPos.m_x -= buttonSize.m_x;
+  buttonPos.m_y += borderY + buttonSize.m_y;
+  addButton(buttonPos, buttonSize, buttonColor, Button::Action::ROTATE_3_L);
+
+  buttonPos.m_x *= -1;
+  buttonPos.m_x -= buttonSize.m_x;
+  addButton(buttonPos, buttonSize, buttonColor, Button::Action::ROTATE_3_R);
 
   updateButtonArrays();
+
+*/
+}
+
+void NGLScene::loadLargeTouchButtons()
+{
+  loadDwellingButtons();
+}
+
+void NGLScene::loadSmallTouchButtons()
+{
+  loadDwellingButtons();
+}
+
+void NGLScene::loadScanningButtons()
+{
+  Data *data = Data::instance();
+  loadDwellingButtons();
+
+
   if(m_buttons.size()>0){
     m_currentButton = &m_buttons[0];
     m_currentButton->m_firstSelected = QTime::currentTime().msecsSinceStartOfDay() / 1000.0;
@@ -221,9 +262,17 @@ void NGLScene::paintGL()
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glViewport(0,0,m_width,m_height);
 
-  shader->use("geoShader");
+  //shader->use("geoShader");
 
-  ngl::VAOPrimitives::instance()->draw("teapot");
+  for(unsigned int i = 0; i<m_geo.size(); i++){
+    m_transform.reset();
+    //for(unsigned int j=0; j<=i; j++){
+      //m_transform.addRotation(m_geo[j]->m_rotation);
+    //}
+    m_transform.addRotation(m_geo[i]->m_rotation);
+    loadMatricesToShader();
+    m_geo[i]->m_mesh.draw();
+  }
 
   shader->use("buttonShader");
 
@@ -233,15 +282,14 @@ void NGLScene::paintGL()
   m_frameRenderTime = (m_time.elapsed() - m_lastRenderElapsed) / 1000.0;
 
   m_lastRenderElapsed = m_time.elapsed();
-
 }
 
-void NGLScene::addButton(ngl::Vec2 _pos, ngl::Vec2 _size, ngl::Vec4 _color)
+void NGLScene::addButton(ngl::Vec2 _pos, ngl::Vec2 _size, ngl::Vec4 _color, Button::Action _action)
 {
   GLuint textureID = 0;
   //GLuint textureID = loadTexture(_textureFile);
   //std::cout << "textureID: " << textureID << std::endl;
-  m_buttons.push_back(Button(_pos, _size, _color, textureID));
+  m_buttons.push_back(Button(_pos, _size, _color, _action, textureID));
 }
 
 GLuint NGLScene::loadTexture(std::string _textureFile)
@@ -314,7 +362,6 @@ GLuint NGLScene::loadTexture(std::string _textureFile)
 
 void NGLScene::updateButtonArrays()
 {
-
   m_buttonPosAndSizes.clear();
   m_buttonColors.clear();
   m_buttonSelectedAndClicked.clear();
@@ -327,9 +374,6 @@ void NGLScene::updateButtonArrays()
     }
     m_buttonSelectedAndClicked.push_back(button.m_selectedTime);
     m_buttonSelectedAndClicked.push_back(button.m_clicked);
-  }
-
-  for(int i=0; i<m_buttonSelectedAndClicked.size(); i++){
   }
 
   glBindVertexArray(m_vaoIDs[0]);
@@ -365,11 +409,18 @@ void NGLScene::mouseMoveEvent (QMouseEvent * _event)
 
 }
 
-
 //----------------------------------------------------------------------------------------------------------------------
 void NGLScene::mousePressEvent ( QMouseEvent * _event)
 {
-
+  Data *data = Data::instance();
+  if(data->mode == Data::TOUCHLARGE || data->mode == Data::TOUCHSMALL){
+    if(_event->button() == Qt::LeftButton){
+      m_currentButton = checkButtonMouseOver();
+      if(m_currentButton){
+        m_action = m_currentButton->click(QTime::currentTime().msecsSinceStartOfDay() / 1000.0);
+      }
+    }
+  }
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -383,8 +434,8 @@ void NGLScene::wheelEvent(QWheelEvent *_event)
 {
 
 }
-//----------------------------------------------------------------------------------------------------------------------
 
+//----------------------------------------------------------------------------------------------------------------------
 void NGLScene::keyPressEvent(QKeyEvent *_event)
 {
   // this method is called every time the main window recives a key event.
@@ -395,7 +446,7 @@ void NGLScene::keyPressEvent(QKeyEvent *_event)
   case Qt::Key_Escape : QGuiApplication::exit(EXIT_SUCCESS); break;
   case Qt::Key_F : toggleFullScreen(); break;
 
-  case Qt::Key_Space : buttonHit();
+  case Qt::Key_Space : if(!_event->isAutoRepeat()) buttonHit();
 
   default : break;
   }
@@ -426,7 +477,7 @@ void NGLScene::timerEvent(QTimerEvent *_event)
           else{
             button.m_selectedTime = currentTime - button.m_firstSelected;
             if(button.m_selectedTime > data->dwellTime){
-              button.click(currentTime);
+              m_action = button.click(currentTime);
             }
           }
         }
@@ -461,12 +512,66 @@ void NGLScene::timerEvent(QTimerEvent *_event)
       }
     break;
 
+    case Data::TOUCHLARGE :
+    case Data::TOUCHSMALL :
+    break;
+
     default :
       std::cerr << "mode not set" << std::endl;
     break;
 
+  }
+  if(m_action) std::cout << m_action << std::endl;
+  switch(m_action){
+    case Button::Action::NONE :
+    break;
+    case Button::Action::SPIN_CW :
+      m_geo[0]->m_rotation.m_y += data->rotateAngle;
+    break;
+    case Button::Action::SPIN_CCW :
+      m_geo[0]->m_rotation.m_y -= data->rotateAngle;
+    break;
+    case Button::Action::ROTATE_1_R :
+      if(m_geo[1]->m_rotation.m_x > -90){
+        m_geo[1]->m_rotation.m_x -= data->rotateAngle;
+      }
+    break;
+    case Button::Action::ROTATE_1_L :
+      if(m_geo[1]->m_rotation.m_x < 90){
+        m_geo[1]->m_rotation.m_x += data->rotateAngle;
+      }
+    break;
+    case Button::Action::ROTATE_2_R :
+      if(m_geo[2]->m_rotation.m_x > -90){
+        m_geo[2]->m_rotation.m_x -= data->rotateAngle;
+      }
+    break;
+    case Button::Action::ROTATE_2_L :
+      if(m_geo[2]->m_rotation.m_x < 90){
+        m_geo[2]->m_rotation.m_x += data->rotateAngle;
+      }
+    break;
+    case Button::Action::ROTATE_3_R :
+      if(m_geo[3]->m_rotation.m_x > -90){
+        m_geo[3]->m_rotation.m_x -= data->rotateAngle;
+      }
+    break;
+    case Button::Action::ROTATE_3_L :
+      if(m_geo[3]->m_rotation.m_x < 90){
+        m_geo[3]->m_rotation.m_x += data->rotateAngle;
+      }
+    break;
+    case Button::Action::KEY :
+    break;
+    case Button::Action::FINISH :
+    break;
+    default :
+    std::cout << "ERROR: button action" << std::endl;
+    break;
 
   }
+
+  m_action = Button::Action::NONE;
 
   shader->setRegisteredUniform("currentTime", currentTime);
   update();
@@ -486,7 +591,7 @@ Button *NGLScene::checkButtonMouseOver()
 void NGLScene::buttonHit()
 {
   float currentTime = QTime::currentTime().msecsSinceStartOfDay() / 1000.0;
-  m_currentButton->click(currentTime);
+  m_action = m_currentButton->click(currentTime);
 }
 
 void NGLScene::toggleFullScreen()
@@ -494,4 +599,13 @@ void NGLScene::toggleFullScreen()
   // complex fullscreen shaders can be expensive and slow, so be careful making window fullscreen (or just large)
   m_fullScreen ^= true;
   m_fullScreen ? showFullScreen() : showNormal();
+}
+
+void NGLScene::loadMatricesToShader()
+{
+  ngl::ShaderLib *shader = ngl::ShaderLib::instance();
+
+  ngl::Mat4 MVP = m_transform.getMatrix() * m_view * m_project;
+
+  shader->setRegisteredUniform("MVP", MVP);
 }

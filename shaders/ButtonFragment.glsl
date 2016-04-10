@@ -4,7 +4,8 @@
 
 #define DWELLING 0
 #define SCANNING 1
-#define TOUCHSCREEN 2
+#define TOUCHLARGE 2
+#define TOUCHSMALL 3
 
 out vec4 outColor;
 
@@ -23,7 +24,9 @@ uniform vec4 clickedColor;
 uniform float circleSize;
 uniform float dwellTime;
 uniform int borderSize;
+uniform int loadingBarSize;
 uniform vec4 borderColor;
+uniform vec4 loadingBarColor;
 uniform int mode;
 
 void main()
@@ -38,7 +41,7 @@ void main()
   vec2 sizeCoord = newSize * resolution;
   vec2 posCoord2 = posCoord + sizeCoord;
 
-  vec2 uv = (gl_FragCoord.xy / resolution);
+  vec2 buttonUV = (gl_FragCoord.xy - posCoord) / sizeCoord;
 
   vec2 centerUV = ( fragPos + (fragSize/2.0) + 1.0 ) / 2.0;
   vec2 centerCoord = (newPos + fragSize/4.0) * resolution;
@@ -53,7 +56,7 @@ void main()
       outColor = fragColor;
     }
     else if(dist < circleSize - borderSize){
-      if(timeSinceClick > dwellTime/4.0){
+      if(timeSinceClick > dwellTime/5.0){
         float angle = 1.0-(fragSelectedTime / dwellTime);
 
         float fragAngle = atan(line.y/line.x);
@@ -88,11 +91,19 @@ void main()
       outColor = borderColor;
     }
   }
-  else if(mode == SCANNING){
-    if(fragSelectedTime > 0){
+  else if(mode == SCANNING || mode == TOUCHLARGE || mode == TOUCHSMALL){
+    if(mode == SCANNING){
+      if(gl_FragCoord.y < posCoord.y + borderSize + loadingBarSize){
+        if(buttonUV.x < fragSelectedTime / dwellTime){
+          outColor = loadingBarColor;
+        }
+      }
+    }
+    else if(fragSelectedTime > 0){
       outColor = fragColor;
     }
-    if(timeSinceClick < dwellTime/4.0){
+
+    if(timeSinceClick < dwellTime/5.0){
       outColor = clickedColor;
     }
   }
@@ -103,6 +114,8 @@ void main()
      gl_FragCoord.y >= posCoord2.y - borderSize){
     outColor = borderColor;
   }
+
+
 
   //outColor = vec4(timeSinceClick, 0.0, 0.0, 1.0);
 }

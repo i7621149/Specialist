@@ -9,12 +9,16 @@ class Button //: QWidget
 //Q_OBJECT
 
 public :
+  enum Action {NONE, SPIN_CW, SPIN_CCW, ROTATE_1_R, ROTATE_1_L, ROTATE_2_R, ROTATE_2_L, ROTATE_3_R, ROTATE_3_L, KEY, FINISH};
+
   Button();
-  Button(ngl::Vec2 _pos, ngl::Vec2 _size, ngl::Vec4 _color, GLuint _textureID);
+  Button(ngl::Vec2 _pos, ngl::Vec2 _size, ngl::Vec4 _color, Action _action, GLuint _textureID);
   ~Button();
 
   bool isInside(ngl::Vec2 _pos);
-  void click(float _time);
+
+  Action click(float _time);
+  Action m_action;
 
   ngl::Vec2 m_pos;
   ngl::Vec2 m_size;
@@ -29,4 +33,4 @@ public :
   //virtual void isClicked(ngl::Vec2 _mousePos);
 };
 
-#endif
+#endif//BUTTON_HPP__

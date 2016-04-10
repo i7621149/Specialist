@@ -8,8 +8,10 @@ layout (location = 2) in vec3 inNormal;
 out vec3 fragmentNormal;
 //out vec3 vPosition;
 
+uniform mat4 MVP;
+
 void main()
 {
   fragmentNormal = normalize(inNormal);
-  gl_Position = vec4(inVert, 1.0);
+  gl_Position = MVP * vec4(inVert, 1.0);
 }

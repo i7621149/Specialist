@@ -9,8 +9,8 @@ class Data : public ngl::Singleton<Data>
 friend class ngl::Singleton<Data>;
 
 public:
-  enum uiMode{DWELLING, SCANNING, TOUCHSCREEN};
-  uiMode mode;
+  enum UiMode{DWELLING, SCANNING, TOUCHLARGE, TOUCHSMALL};
+  UiMode mode;
   ngl::Vec4 baseColor;
   ngl::Vec4 selectedColor;
   ngl::Vec4 clickedColor;
@@ -20,7 +20,10 @@ public:
   float circleSize;
   bool clickMovement;
   int borderSize;
+  int loadingBarSize;
   ngl::Vec4 borderColor;
+  ngl::Vec4 loadingBarColor;
+  float rotateAngle;
 private:
   Data();
 };
