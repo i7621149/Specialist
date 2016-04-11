@@ -150,6 +150,8 @@ private:
   ngl::Mat4 m_project;
 
   Button::Action m_action;
+  
+  std::vector<ngl::Vec3> m_rotations;
 };
 
 

@@ -3,7 +3,6 @@
 
 #include "NGLScene.hpp"
 #include <ngl/NGLInit.h>
-#include <iostream>
 #include <ngl/ShaderLib.h>
 #include "Data.hpp"
 #include <QPoint>
@@ -105,10 +104,10 @@ void NGLScene::initializeGL()
 
   m_view = ngl::lookAt(ngl::Vec3(5,1,0), ngl::Vec3(0,1,0), ngl::Vec3(0,1,0));
 
-  m_geo.push_back(new Geo("geo/base.obj", 0.05));
-  m_geo.push_back(new Geo("geo/lower.obj", 0.8));
-  m_geo.push_back(new Geo("geo/upper.obj", 0.8));
-  m_geo.push_back(new Geo("geo/hand.obj", 0.2));
+  m_geo.push_back(new Geo("geo/base.obj", 0.05, 360000));
+  m_geo.push_back(new Geo("geo/lower.obj", 0.8, 90));
+  m_geo.push_back(new Geo("geo/upper.obj", 0.8, 90));
+  m_geo.push_back(new Geo("geo/hand.obj", 0.2, 90));
 
   for(auto &geo : m_geo){
     geo->m_mesh.createVAO();
@@ -170,18 +169,31 @@ void NGLScene::loadDwellingButtons()
 
   float firstX = borderX * 2 - 1.0;
   float firstY = borderY * 2 - 1.0;
+  float firstW = 0.7;
+
+
+  float keyX = firstX;
+  float keyY = firstY;
+  keyX += borderX + firstW;
+
+  float keyX2 = (keyX * -1);
 
   buttonPos.set(firstX, firstY);
-  buttonSize.set(0.7, 0.35);
+  buttonSize.set(firstW, 0.35);
+  addButton(buttonPos, buttonSize, buttonColor, Button::Action::SPIN_CW);
 
-  addButton(buttonPos, buttonSize, buttonColor, Button::Action::SPIN_CCW);
+  buttonPos.set(keyX, keyY);
+  buttonSize.set(keyX2 - keyX, 0.35);
+  addButton(buttonPos, buttonSize, buttonColor, Button::Action::KEY);
+
+  buttonPos.set(firstX, firstY);
+  buttonSize.set(firstW, 0.35);
 
   buttonPos.m_x *= -1;
   buttonPos.m_x -= buttonSize.m_x;
-  addButton(buttonPos, buttonSize, buttonColor, Button::Action::SPIN_CW);
+  addButton(buttonPos, buttonSize, buttonColor, Button::Action::SPIN_CCW);
 
   buttonSize.set(0.5, 0.35);
-
   buttonPos.m_x = firstX;
   buttonPos.m_y += borderY + buttonSize.m_y;
   addButton(buttonPos, buttonSize, buttonColor, Button::Action::ROTATE_1_L);
@@ -226,7 +238,6 @@ void NGLScene::loadScanningButtons()
   Data *data = Data::instance();
   loadDwellingButtons();
 
-
   if(m_buttons.size()>0){
     m_currentButton = &m_buttons[0];
     m_currentButton->m_firstSelected = QTime::currentTime().msecsSinceStartOfDay() / 1000.0;
@@ -246,12 +257,11 @@ void NGLScene::paintGL()
   shader->use("geoShader");
 
   m_transform.reset();
-  ngl::Vec3 translation(0,0,0);
   for(unsigned int i = 0; i<m_geo.size(); i++){
     m_transform.setRotation(m_geo[i]->m_rotation);
     loadMatricesToShader();
     m_geo[i]->m_mesh.draw();
-    m_transform.addPosition(m_geo[i]->getTopPosition());
+    m_transform.addPosition(m_geo[i]->getTopTranslation());
     //m_transform.setPosition(position);
   }
 
@@ -259,6 +269,7 @@ void NGLScene::paintGL()
 
   glBindVertexArray(m_vaoIDs[0]);
   glDrawArrays(GL_POINTS, 0, m_buttons.size());
+  glBindVertexArray(0);
 
   m_frameRenderTime = (m_time.elapsed() - m_lastRenderElapsed) / 1000.0;
 
@@ -500,69 +511,84 @@ void NGLScene::timerEvent(QTimerEvent *_event)
     default :
       std::cerr << "mode not set" << std::endl;
     break;
-
   }
+
   int start = 0;
   int dir = 0;
   int rotIndex = 0;
-  if(m_action) std::cout << m_action << std::endl;
   switch(m_action){
     case Button::Action::NONE :
     break;
-    case Button::Action::SPIN_CW :
-      start = 0;
-      dir += 0;
-      rotIndex = 1;
-    break;
     case Button::Action::SPIN_CCW :
-      start = 0;
-      dir -= 1;
-      rotIndex = 1;
+      if(m_geo[0]->m_localRotation[1] < (m_geo[0]->m_maxAngle)){
+        rotIndex = 1;
+        start = 0;
+        dir += 1;
+      }
+    break;
+    case Button::Action::SPIN_CW :
+      if(m_geo[0]->m_localRotation[1] > -(m_geo[0]->m_maxAngle)){
+        rotIndex = 1;
+        start = 0;
+        dir -= 1;
+      }
     break;
     case Button::Action::ROTATE_1_R :
-        start = 1;
-        dir -= 1;
         rotIndex = 0;
+        if(m_geo[1]->m_localRotation[0] > -(m_geo[1]->m_maxAngle)){
+          start = 1;
+          dir -= 1;
+        }
     break;
     case Button::Action::ROTATE_1_L :
-        start = 1;
-        dir += 1;
         rotIndex = 0;
+        if(m_geo[1]->m_localRotation[0] < m_geo[1]->m_maxAngle){
+          start = 1;
+          dir += 1;
+        }
     break;
     case Button::Action::ROTATE_2_R :
-        start = 2;
-        dir -= 1;
         rotIndex = 0;
+        if(m_geo[2]->m_localRotation[0] > -(m_geo[2]->m_maxAngle)){
+          start = 2;
+          dir -= 1;
+        }
     break;
     case Button::Action::ROTATE_2_L :
-        start = 2;
-        dir += 1;
         rotIndex = 0;
+        if(m_geo[2]->m_localRotation[0] < m_geo[2]->m_maxAngle){
+          start = 2;
+          dir += 1;
+        }
     break;
     case Button::Action::ROTATE_3_R :
-        start = 3;
-        dir -= 1;
         rotIndex = 0;
+        if(m_geo[3]->m_localRotation[0] > -(m_geo[3]->m_maxAngle)){
+          start = 3;
+          dir -= 1;
+        }
     break;
     case Button::Action::ROTATE_3_L :
-        start = 3;
-        dir += 1;
         rotIndex = 0;
+        if(m_geo[3]->m_localRotation[0] < m_geo[3]->m_maxAngle){
+          start = 3;
+          dir += 1;
+        }
     break;
     case Button::Action::KEY :
+      writeKey();
     break;
     case Button::Action::FINISH :
     break;
     default :
-    std::cout << "ERROR: button action" << std::endl;
+      std::cout << "ERROR: button action" << std::endl;
     break;
 
   }
 
+  m_geo[start]->m_localRotation[rotIndex] += data->rotateAngle * dir;
   for(unsigned int i = start; i<m_geo.size(); i++){
-    if(m_geo[i]->m_rotation[0] < 90 && m_geo[i]->m_rotation[rotIndex] > -90){
       m_geo[i]->m_rotation[rotIndex] += data->rotateAngle * dir;
-    }
   }
 
   m_action = Button::Action::NONE;
@@ -597,9 +623,25 @@ void NGLScene::toggleFullScreen()
 
 void NGLScene::loadMatricesToShader()
 {
-  ngl::ShaderLib *shader = ngl::ShaderLib::instance();
 
-  ngl::Mat4 MVP = m_transform.getMatrix() * m_view * m_project;
+  ngl::ShaderLib *shader=ngl::ShaderLib::instance();
+
+  ngl::Mat4 MVP;
+  ngl::Mat3 normalMatrix;
+
+  MVP = m_transform.getMatrix() * m_view * m_project;
+  normalMatrix = m_transform.getMatrix();
+  normalMatrix.inverse();
 
   shader->setRegisteredUniform("MVP", MVP);
+  shader->setRegisteredUniform("normalMatrix", normalMatrix);
+}
+
+int NGLScene::writeKey()
+{
+  std::cout << "KEY!" << std::endl;
+  for(int i=0; i<m_geo.size(); i++ ){
+    Geo *geo = m_geo[i];
+  }
+  return 0;
 }

@@ -1,5 +1,4 @@
 #include "Button.hpp"
-#include <iostream>
 #include "Data.hpp"
 
 Button::Button() :

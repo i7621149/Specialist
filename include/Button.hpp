@@ -9,7 +9,7 @@ class Button //: QWidget
 //Q_OBJECT
 
 public :
-  enum Action {NONE, SPIN_CW, SPIN_CCW, ROTATE_1_R, ROTATE_1_L, ROTATE_2_R, ROTATE_2_L, ROTATE_3_R, ROTATE_3_L, KEY, FINISH};
+  enum Action {NONE, SPIN_CCW, SPIN_CW, ROTATE_1_R, ROTATE_1_L, ROTATE_2_R, ROTATE_2_L, ROTATE_3_R, ROTATE_3_L, KEY, FINISH};
 
   Button();
   Button(ngl::Vec2 _pos, ngl::Vec2 _size, ngl::Vec4 _color, Action _action, GLuint _textureID);
