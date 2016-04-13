@@ -12,6 +12,8 @@
 #include <QTime>
 #include <ngl/Obj.h>
 #include "Geo.hpp"
+#include <QTimer>
+
 //----------------------------------------------------------------------------------------------------------------------
 /// @file NGLScene.h
 /// @brief this class inherits from the Qt OpenGLWindow and allows us to use NGL to draw OpenGL
@@ -57,6 +59,7 @@ public:
 
   Button *checkButtonMouseOver();
 
+  void loadButtons();
   void loadDwellingButtons();
   void loadLargeTouchButtons();
   void loadSmallTouchButtons();
@@ -66,7 +69,12 @@ public:
 
   void loadMatricesToShader();
 
-  int writeKey();
+  void writeKey();
+
+  int writeOut();
+
+  void createQuad();
+  void drawQuad();
 
 private:
   //----------------------------------------------------------------------------------------------------------------------
@@ -121,7 +129,7 @@ private:
 
   GLuint m_vaoIDs[2];
 
-  GLuint m_vboIDs[3];
+  GLuint m_vboIDs[4];
 
   std::vector<Button> m_buttons;
 
@@ -129,7 +137,7 @@ private:
 
   std::vector<float> m_buttonColors;
 
-  std::vector<float> m_buttonSelectedAndClicked;
+  std::vector<float> m_buttonSelectedClickedAction;
 
   ngl::Vec2 m_mousePos;
 
@@ -150,6 +158,24 @@ private:
   ngl::Mat4 m_project;
 
   Button::Action m_action;
+  
+  std::vector<ngl::Vec3> m_localRotHistory;
+
+  std::vector<ngl::Vec3> m_rotHistory;
+  std::vector<ngl::Vec3> m_localTransHistory;
+  std::vector<ngl::Vec3> m_transHistory;
+
+  int m_frame;
+
+  GLuint m_vaoID;
+  bool m_finished;
+
+  int m_timer1;
+  int m_timer2;
+  int m_timer3;
+
+  bool m_colorSet;
+
 };
 
 

@@ -8,6 +8,7 @@ in vec2 buttonPos[];
 in vec2 buttonSize[];
 in float buttonSelectedTime[];
 in float buttonClickedTime[];
+in float buttonAction[];
 
 uniform float currentTime;
 uniform bool clickMovement;
@@ -18,6 +19,7 @@ out vec2 fragSize;
 out float fragSelectedTime;
 out float fragClickedTime;
 out float fragCurrentTime;
+out float fragAction;
 
 void main()
 {
@@ -25,6 +27,7 @@ void main()
   fragSelectedTime = buttonSelectedTime[0];
   fragClickedTime = buttonClickedTime[0];
   fragCurrentTime = currentTime;
+  fragAction = buttonAction[0];
 
   float timeSinceClick = currentTime - buttonClickedTime[0];
 
