@@ -85,10 +85,11 @@ cmds.currentTime(0)
 cmds.setKeyframe(CTRL)
 
 cmds.currentTime(fps*spinNum)
-cmds.rotate(0,360*spinNum,0, CTRL)
+cmds.rotate(0,-360*spinNum,0, CTRL)
 
 cmds.setKeyframe(CTRL)
 cmds.setAttr("lambert2.color", col[0], col[1], col[2])
-cmds.hide(objectList)
 
 cmds.group(CTRL, tableGRP, GRP, n="zoetrope")
+cmds.hide(objectList)
+cmds.hide(CTRL)

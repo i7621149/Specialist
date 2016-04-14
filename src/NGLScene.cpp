@@ -242,7 +242,8 @@ void NGLScene::loadButtons()
     case Data::TOUCHLARGE :
       loadLargeTouchButtons();
     break;
-    case Data::TOUCHSMALL :
+    case Data::TOUCHSMALL_L :
+    case Data::TOUCHSMALL_R :
       loadSmallTouchButtons();
     break;
     default :
@@ -366,7 +367,118 @@ void NGLScene::loadLargeTouchButtons()
 
 void NGLScene::loadSmallTouchButtons()
 {
-  loadDwellingButtons();
+  Data *data = Data::instance();
+  m_buttons.clear();
+
+  ngl::Vec2 buttonPos;
+  ngl::Vec2 buttonSize;
+  ngl::Vec4 buttonColor;
+  float sf = 0.3;
+  ngl::Vec2 one;
+
+  if(data->mode == Data::TOUCHSMALL_L){
+    one = ngl::Vec2(-0.65, -0.65);
+  }
+  else{
+    one = ngl::Vec2(0.65, -0.65);
+  }
+
+
+  buttonColor.set(data->baseColor);
+  if(m_colorSet){
+
+    float borderX = 50.0;
+    float borderY = 50.0;
+
+    borderX = borderX/m_width;
+    borderY = borderY/m_height;
+
+    float firstX = borderX * 2 - 1.0;
+    float firstY = borderY * 2 - 1.0;
+    float firstW = 0.7;
+
+    float keyX = firstX;
+    float keyY = firstY;
+    keyX += borderX + firstW;
+
+    float keyX2 = (keyX * -1);
+
+    buttonPos.set(firstX, firstY);
+    buttonSize.set(firstW, 0.35);
+    addButton(one+sf*buttonPos, sf*buttonSize, buttonColor, Button::Action::SPIN_CW);
+
+    buttonPos.set(keyX, keyY);
+    buttonSize.set(keyX2 - keyX, 0.35);
+    addButton(one+sf*buttonPos, sf*buttonSize, buttonColor, Button::Action::KEY);
+
+    buttonPos.set(firstX, firstY);
+    buttonSize.set(firstW, 0.35);
+
+    buttonPos.m_x *= -1;
+    buttonPos.m_x -= buttonSize.m_x;
+    addButton(one+sf*buttonPos, sf*buttonSize, buttonColor, Button::Action::SPIN_CCW);
+
+    buttonPos.m_x = firstX;
+    buttonPos.m_y += borderY + buttonSize.m_y;
+    addButton(one+sf*buttonPos, sf*buttonSize, buttonColor, Button::Action::ROTATE_1_L);
+
+    buttonPos.m_x *= -1;
+    buttonPos.m_x -= buttonSize.m_x;
+    addButton(one+sf*buttonPos, sf*buttonSize, buttonColor, Button::Action::ROTATE_1_R);
+
+    buttonPos.m_x *= -1;
+    buttonPos.m_x -= buttonSize.m_x;
+    buttonPos.m_y += borderY + buttonSize.m_y;
+    addButton(one+sf*buttonPos, sf*buttonSize, buttonColor, Button::Action::ROTATE_2_L);
+
+    buttonPos.m_x *= -1;
+    buttonPos.m_x -= buttonSize.m_x;
+    addButton(one+sf*buttonPos, sf*buttonSize, buttonColor, Button::Action::ROTATE_2_R);
+
+    buttonPos.m_x *= -1;
+    buttonPos.m_x -= buttonSize.m_x;
+    buttonPos.m_y += borderY + buttonSize.m_y;
+    addButton(one+sf*buttonPos, sf*buttonSize, buttonColor, Button::Action::ROTATE_3_L);
+
+    buttonPos.m_x *= -1;
+    buttonPos.m_x -= buttonSize.m_x;
+    addButton(one+sf*buttonPos, sf*buttonSize, buttonColor, Button::Action::ROTATE_3_R);
+  }
+  else{
+    float borderX = 50.0;
+    float borderY = 50.0;
+
+    borderX = borderX/m_width;
+    borderY = borderY/m_height;
+
+    float firstX = borderX * 2 - 1.0;
+    float firstY = borderY * 2 - 1.0;
+    float firstW = 0.5;
+
+
+    float keyX = firstX;
+    float keyY = firstY;
+    keyX += borderX + firstW;
+
+    float keyX2 = (keyX * -1);
+
+    buttonPos.set(firstX, firstY);
+    buttonSize.set(firstW, 0.7);
+    addButton(one+sf*buttonPos, sf*buttonSize, buttonColor, Button::Action::COLOR_L);
+
+    buttonPos.set(keyX, keyY);
+    buttonSize.set(keyX2 - keyX, 0.4);
+    addButton(one+sf*buttonPos, sf*buttonSize, buttonColor, Button::Action::COLOR_SET);
+
+    buttonPos.set(firstX, firstY);
+    buttonSize.set(firstW, 0.7);
+
+    buttonPos.m_x *= -1;
+    buttonPos.m_x -= buttonSize.m_x;
+    addButton(one+sf*buttonPos, sf*buttonSize, buttonColor, Button::Action::COLOR_R);
+  }
+
+  updateButtonArrays();
 }
 
 void NGLScene::loadScanningButtons()
@@ -621,7 +733,7 @@ void NGLScene::mouseMoveEvent (QMouseEvent * _event)
 void NGLScene::mousePressEvent ( QMouseEvent * _event)
 {
   Data *data = Data::instance();
-  if(data->mode == Data::TOUCHLARGE || data->mode == Data::TOUCHSMALL){
+  if(data->mode == Data::TOUCHLARGE || data->mode == Data::TOUCHSMALL_L || data->mode == Data::TOUCHSMALL_R){
     if(_event->button() == Qt::LeftButton){
       m_currentButton = checkButtonMouseOver();
       if(m_currentButton){
@@ -726,7 +838,8 @@ void NGLScene::timerEvent(QTimerEvent *_event)
       break;
 
       case Data::TOUCHLARGE :
-      case Data::TOUCHSMALL :
+      case Data::TOUCHSMALL_L :
+      case Data::TOUCHSMALL_R :
       break;
 
       default :

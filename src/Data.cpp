@@ -2,17 +2,17 @@
 #include <iostream>
 
 Data::Data() :
-  mode(DWELLING),
-  shaderMode(CIRCLE),
+  mode(TOUCHSMALL_R),
+  shaderMode(NONE),
   backgroundColor(0.6, 0.8, 0.9, 1.0),
-  geoColor(0.9, 0.5, 0.7, 1.0),
+  geoColor(0.9, 0.4, 0.6, 1.0),
   ghostColor(geoColor + ngl::Vec4(0.1, 0.1, 0.1, 0.0)),
   baseColor(0.5, 0.5, 0.9, 1.0),
   selectedColor(0.7, 0.7, 1.0, 1.0),
   clickedColor(0.6, 1.0, 0.6, 1.0),
   width(1024),
   height(720),
-  dwellTime(1.0),
+  dwellTime(0.8),
   circleSize(40.0),
   clickMovement(false),
   borderSize(5),
@@ -29,10 +29,10 @@ Data::Data() :
   progressBarColor(baseColor),
   progressBarSelection(clickedColor),
   progressBarBack(loadingBarColor),
-  hueChangeAmount(36),
+  hueChangeAmount(18),
   colorSet(false)
 {
-  if(mode == TOUCHSMALL){
+  if(mode == TOUCHLARGE || mode == TOUCHSMALL_L || mode == TOUCHSMALL_R){
     shaderMode = NONE;
   }
 

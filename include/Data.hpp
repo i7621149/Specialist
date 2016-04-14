@@ -9,7 +9,7 @@ class Data : public ngl::Singleton<Data>
 friend class ngl::Singleton<Data>;
 
 public:
-  enum UiMode{DWELLING, SCANNING, TOUCHLARGE, TOUCHSMALL};
+  enum UiMode{DWELLING, SCANNING, TOUCHLARGE, TOUCHSMALL_L, TOUCHSMALL_R};
   enum UiShaderMode{CIRCLE, BAR, NONE};
   UiMode mode;
   UiShaderMode shaderMode;

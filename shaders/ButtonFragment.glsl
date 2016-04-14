@@ -4,7 +4,6 @@
 
 #define CIRCLE 0
 #define BAR 1
-#define NONE 2
 
 #define NONE 0
 #define SPIN_CCW 1
@@ -48,9 +47,6 @@ uniform int animLength;
 uniform float hueChangeAmount;
 
 uniform vec4 originalColor;
-
-uniform vec4 geoColor;
-
 
 float MIN(float a, float b, float c)
 {
@@ -173,34 +169,10 @@ void main()
   vec2 line = gl_FragCoord.xy - centerCoord;
   float dist = distance(gl_FragCoord.xy, centerCoord);
 
-  vec4 plusColor = RGBtoHSV(geoColor.r, geoColor.g, geoColor.b);
-  plusColor[0] += hueChangeAmount;
-  if(plusColor[0] > 360.0){
-    plusColor[0] -= 360.0;
-  }
-  plusColor = HSVtoRGB(plusColor.r, plusColor.g, plusColor.b);
-
-  vec4 minusColor = RGBtoHSV(geoColor.r, geoColor.g, geoColor.b);
-  minusColor[0] -= hueChangeAmount;
-  if(minusColor[0] < 0){
-    minusColor[0] += 360;
-  }
-  minusColor = RGBtoHSV(minusColor.r, minusColor.g, minusColor.b);
-
-  if(minusColor[0] < 0){
-    minusColor[0] += 360;
-  }
-
   outColor = fragColor;
 
-  vec4 buttonColor = originalColor;
+  vec4 buttonColor = outColor;
 
-  if(fragAction == COLOR_L){
-    buttonColor = plusColor;
-  }
-  else if(fragAction == COLOR_R){
-    buttonColor = minusColor;
-  }
 
   if(mode == CIRCLE){
     //outColor = baseColor;
@@ -250,15 +222,6 @@ void main()
     }
     else{
       outColor = borderColor;
-
-
-
-
-
-
-      //outColor = fragColor;
-
-
 
 
 
