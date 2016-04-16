@@ -1032,6 +1032,12 @@ void NGLScene::writeKey()
 
     buttonPos.set(keyX, keyY);
     buttonSize.set(0.5, 0.55);
+
+    if(Data::instance()->mode == Data::TOUCHSMALL_R){
+      buttonPos.m_x *= -1;
+      buttonPos.m_x -= buttonSize.m_x;
+    }
+
     addButton(buttonPos, buttonSize, Data::instance()->baseColor, Button::Action::FINISH);
 
     updateButtonArrays();

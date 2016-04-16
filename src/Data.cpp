@@ -3,7 +3,7 @@
 
 Data::Data() :
   mode(TOUCHSMALL_R),
-  shaderMode(NONE),
+  shaderMode(CIRCLE),
   backgroundColor(0.6, 0.8, 0.9, 1.0),
   geoColor(0.9, 0.4, 0.6, 1.0),
   ghostColor(geoColor + ngl::Vec4(0.1, 0.1, 0.1, 0.0)),
@@ -43,7 +43,6 @@ void Data::updateColor(int _hueChange)
 {
   ngl::Vec4 newColHSV = RGBtoHSV(geoColor[0], geoColor[1], geoColor[2]);
 
-  std::cout << "hsvbefore: " << newColHSV[0] << ", " << newColHSV[1] << ", " << newColHSV[2] << std::endl;
 
   newColHSV[0] += _hueChange * hueChangeAmount;
   if(newColHSV[0] > 360.0){
@@ -52,9 +51,7 @@ void Data::updateColor(int _hueChange)
   if(newColHSV[0] < 0){
     newColHSV[0] += 360;
   }
-  std::cout << "hueafter: " << newColHSV[0] << ", " << newColHSV[1] << ", " << newColHSV[2] << std::endl;
   geoColor = HSVtoRGB(newColHSV[0], newColHSV[1], newColHSV[2]);
-  std::cout << "rgbafter: " << geoColor[0] << ", " << geoColor[1] << ", " << geoColor[2] << std::endl;
   ghostColor = geoColor + ngl::Vec4(0.1, 0.1, 0.1, 0.0);
   ghostColor.m_w = 0;
 }
