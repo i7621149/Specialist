@@ -41,7 +41,6 @@ void NGLScene::resizeGL(QResizeEvent *_event)
   shader->use("progressShader");
   shader->setRegisteredUniform("resolution", ngl::Vec2(m_width, m_height));
   m_project = ngl::perspective(45.0f, float(m_width)/float(m_height), 0.2f, 20.0f);
-
 }
 
 void NGLScene::resizeGL(int _w , int _h)
@@ -139,7 +138,7 @@ void NGLScene::initializeGL()
 
 
   shader->createShaderProgram("progressShader");
-  shader->attachShader("prgoressVertex",ngl::ShaderType::VERTEX);
+  shader->attachShader("progressVertex",ngl::ShaderType::VERTEX);
   shader->attachShader("progressFragment",ngl::ShaderType::FRAGMENT);
 
   shader->loadShaderSource("progressVertex","shaders/ProgressVertex.glsl");

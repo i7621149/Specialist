@@ -2,7 +2,7 @@
 #include <iostream>
 
 Data::Data() :
-  mode(TOUCHSMALL_R),
+  mode(DWELLING),
   shaderMode(CIRCLE),
   backgroundColor(0.6, 0.8, 0.9, 1.0),
   geoColor(0.9, 0.4, 0.6, 1.0),
